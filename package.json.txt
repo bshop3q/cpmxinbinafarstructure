@@ -1,9 +1,0 @@
-{
-  "name": "coinpayer-otc",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "echo \"Static site - no build needed\" && mkdir -p dist && cp index.html dist/index.html 2>/dev/null || true"
-  }
-}
