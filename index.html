@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CoinPayer OTC</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --bg: #0b0b0b;
+            --surface: #141414;
+            --surface-hover: #1c1c1c;
+            --border: rgba(255, 255, 255, 0.06);
+            --border-focus: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.55);
+            --text-tertiary: rgba(255, 255, 255, 0.3);
+            --accent: #3b82f6;
+            --accent-dim: rgba(59, 130, 246, 0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        html,
+        body,
+        #root {
+            min-height: 100%;
+        }
+        body {
+            margin: 0;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        ::selection {
+            background: var(--accent-dim);
+            color: var(--text);
+        }
+        input,
+        button {
+            font-family: inherit;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade {
+            animation: fadeUp 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.85);
+            }
+        }
+        .pulse-dot {
+            animation: pulse-dot 1.6s ease-in-out infinite;
+        }
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 4px;
+        }
+        .step-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            transition: background 0.3s;
+        }
+        .step-dot.active {
+            background: var(--accent);
+        }
+        .step-dot.done {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: border-color 0.2s;
+        }
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            height: 50px;
+            border-radius: var(--radius-sm);
+            background: var(--accent);
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .btn-primary:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+            background: var(--accent);
+        }
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            height: 46px;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+            border-color: var(--border-focus);
+        }
+        .btn-secondary:active {
+            transform: scale(0.98);
+        }
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            font-size: 18px;
+        }
+        .btn-ghost:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+        .btn-ghost:active {
+            transform: scale(0.94);
+        }
+        .input-field {
+            width: 100%;
+            height: 48px;
+            padding: 0 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            border-color: var(--border-focus);
+        }
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+        .input-with-prefix {
+            position: relative;
+        }
+        .input-with-prefix .prefix {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 14px;
+            pointer-events: none;
+        }
+        .input-with-prefix input {
+            padding-left: 32px;
+        }
+        .input-with-suffix {
+            position: relative;
+        }
+        .input-with-suffix .suffix {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+        }
+        .input-with-suffix input {
+            padding-right: 50px;
+        }
+        .input-large {
+            height: 56px;
+            font-size: 28px;
+            font-weight: 700;
+            padding: 0 16px;
+            letter-spacing: -0.02em;
+        }
+        .input-large-with-suffix {
+            padding-right: 56px;
+        }
+        .input-large-with-suffix .suffix {
+            font-size: 18px;
+            font-weight: 600;
+            right: 16px;
+        }
+        .option-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+            width: 100%;
+            text-align: left;
+            color: var(--text);
+        }
+        .option-card:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-focus);
+        }
+        .option-card:active {
+            transform: scale(0.98);
+        }
+        .option-card .flag {
+            font-size: 24px;
+            line-height: 1;
+            width: 32px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .option-card .label {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .option-card .sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .option-card .right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .option-card .right .rate {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+        }
+        .option-card .right .hint {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-tertiary);
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 12px 0;
+        }
+        .amount-preview {
+            text-align: center;
+            padding: 12px 0 4px;
+        }
+        .amount-preview .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+            font-weight: 600;
+        }
+        .amount-preview .value {
+            font-size: 40px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        .amount-preview .value .unit {
+            font-size: 22px;
+            font-weight: 600;
+            opacity: 0.6;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-row .label {
+            color: var(--text-secondary);
+        }
+        .detail-row .value {
+            font-weight: 500;
+            text-align: right;
+        }
+        .detail-row .value.accent {
+            color: var(--accent);
+        }
+        .toast-copied {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast-copied .check {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* responsive */
+        @media (max-width: 480px) {
+            .amount-preview .value {
+                font-size: 34px;
+            }
+            .amount-preview .value .unit {
+                font-size: 18px;
+            }
+            .input-large {
+                font-size: 24px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+            }
+        }
+    </script>
+    <script type="module">
+        import React, { useState, useEffect, useRef, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+
+        const COUNTRIES = [{
+            code: 'MX',
+            name: 'México',
+            flag: '🇲🇽',
+            currency: 'MXN',
+            rate: 22.2,
+            methods: ['Banamex', 'BBVA', 'Banco Azteca', 'OXXO SPIN']
+        }, {
+            code: 'CO',
+            name: 'Colombia',
+            flag: '🇨🇴',
+            currency: 'COP',
+            rate: 5000,
+            methods: ['Transferencia']
+        }, {
+            code: 'EC',
+            name: 'Ecuador',
+            flag: '🇪🇨',
+            currency: 'USD',
+            rate: 1.7,
+            methods: ['Transferencia']
+        }, {
+            code: 'PA',
+            name: 'Panamá',
+            flag: '🇵🇦',
+            currency: 'USD',
+            rate: 2,
+            methods: ['Transferencia']
+        }, {
+            code: 'PE',
+            name: 'Perú',
+            flag: '🇵🇪',
+            currency: 'PEN',
+            rate: 5.5,
+            methods: ['Transferencia']
+        }, {
+            code: 'CL',
+            name: 'Chile',
+            flag: '🇨🇱',
+            currency: 'CLP',
+            rate: 1500,
+            methods: ['Transferencia']
+        }, {
+            code: 'BR',
+            name: 'Brazil',
+            flag: '🇧🇷',
+            currency: 'BRL',
+            rate: 15,
+            methods: ['Transferencia']
+        }, {
+            code: 'PH',
+            name: 'Philippines',
+            flag: '🇵🇭',
+            currency: 'PHP',
+            rate: 120,
+            methods: ['Transferencia']
+        }, {
+            code: 'AR',
+            name: 'Argentina',
+            flag: '🇦🇷',
+            currency: 'ARS',
+            rate: 2500,
+            methods: ['Transferencia']
+        }];
+
+        const STEPS = { signup: 0, country: 20, amount: 40, payment: 60, confirm: 80, final: 100 };
+
+        const fmt = n => Number(n).toLocaleString('es-MX');
+
+        function DetailRow({ label, value, accent }) {
+            return (
+                <div className="detail-row">
+                    <span className="label">{label}</span>
+                    <span className={`value ${accent ? 'accent' : ''}`}>{value}</span>
+                </div>
+            );
+        }
+
+        function App() {
+            const [step, setStep] = useState('signup');
+            const [username, setUsername] = useState('');
+            const [uid, setUid] = useState('');
+            const [inputUser, setInputUser] = useState('');
+            const [inputUid, setInputUid] = useState('');
+            const [country, setCountry] = useState(null);
+            const [amount, setAmount] = useState('');
+            const [amountNum, setAmountNum] = useState(0);
+            const [method, setMethod] = useState('');
+            const [ref, setRef] = useState('');
+            const [userError, setUserError] = useState(false);
+            const [uidError, setUidError] = useState(false);
+            const [copyState, setCopyState] = useState('idle');
+            const inputRef = useRef(null);
+
+            const usdtReceived = useMemo(() => {
+                if (!country || !amountNum) return 0;
+                return amountNum / country.rate;
+            }, [country, amountNum]);
+
+            useEffect(() => {
+                const u = localStorage.getItem('cp_username');
+                const i = localStorage.getItem('cp_uid');
+                if (u && i) {
+                    setUsername(u);
+                    setUid(i);
+                    setInputUser(u.replace(/^@/, ''));
+                    setInputUid(i);
+                    setStep('country');
+                }
+            }, []);
+
+            useEffect(() => {
+                if (step === 'amount') {
+                    setTimeout(() => inputRef.current?.focus(), 180);
+                }
+                if (step === 'payment' && !ref) {
+                    setRef('CP-' + String(Math.floor(100000 + Math.random() * 900000)));
+                }
+                if (step === 'confirm' && !ref) {
+                    setRef('CP-' + String(Math.floor(100000 + Math.random() * 900000)));
+                }
+            }, [step]);
+
+            const handleSignup = () => {
+                const u = inputUser.trim();
+                const uname = u.startsWith('@') ? u : '@' + u;
+                const id = inputUid.trim();
+                let ok = true;
+                if (!/^@[a-zA-Z0-9_]{3,}$/.test(uname)) {
+                    setUserError(true);
+                    ok = false;
+                } else setUserError(false);
+                if (!/^\d{5,}$/.test(id)) {
+                    setUidError(true);
+                    ok = false;
+                } else setUidError(false);
+                if (!ok) return;
+                setUsername(uname);
+                setUid(id);
+                localStorage.setItem('cp_username', uname);
+                localStorage.setItem('cp_uid', id);
+                setStep('country');
+            };
+
+            const selectCountry = (c) => {
+                setCountry(c);
+                setAmount('');
+                setAmountNum(0);
+                setMethod('');
+                setStep('amount');
+            };
+
+            const handleAmountChange = (v) => {
+                setAmount(v);
+                const n = parseFloat(v);
+                setAmountNum(isNaN(n) || n < 0 ? 0 : n);
+            };
+
+            const selectMethod = (m) => {
+                setMethod(m);
+                setStep('confirm');
+            };
+
+            const createOrder = () => {
+                setStep('final');
+            };
+
+            const copyAndOpen = async () => {
+                const msg =
+                    `🔷 NUEVA ORDEN COINPAYER\nUsuario: ${username}\nBYBIT UID: ${uid}\nPaís: ${country.name}\nMonto: ${fmt(amountNum)} ${country.currency}\nRecibir: ~${usdtReceived.toFixed(2)} USDT\nBanco: ${method}\nRef: ${ref}`;
+                try {
+                    await navigator.clipboard.writeText(msg);
+                } catch (_) {
+                    const ta = document.createElement('textarea');
+                    ta.value = msg;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    ta.remove();
+                }
+                setCopyState('copied');
+                setTimeout(() => {
+                    if (window.Telegram?.WebApp?.openTelegramLink) {
+                        window.Telegram.WebApp.openTelegramLink('https://t.me/ViaOTCmexico_bot');
+                    } else {
+                        window.open('https://t.me/ViaOTCmexico_bot', '_blank');
+                    }
+                }, 400);
+            };
+
+            const openTelegram = () => {
+                if (window.Telegram?.WebApp?.openTelegramLink) {
+                    window.Telegram.WebApp.openTelegramLink('https://t.me/ViaOTCmexico_bot');
+                } else {
+                    window.open('https://t.me/ViaOTCmexico_bot', '_blank');
+                }
+            };
+
+            const resetOrder = () => {
+                setAmount('');
+                setAmountNum(0);
+                setMethod('');
+                setRef('');
+                setCopyState('idle');
+                setStep('country');
+            };
+
+            const pct = STEPS[step] || 0;
+            const totalSteps = Object.keys(STEPS).length - 1;
+
+            return (
+                <div style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    fontFamily: 'var(--font)'
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: 420,
+                        minHeight: '100vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: 'var(--bg)',
+                        borderLeft: '1px solid var(--border)',
+                        borderRight: '1px solid var(--border)',
+                        position: 'relative'
+                    }}>
+                        {/* Header */}
+                        <header style={{
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 10,
+                            background: 'rgba(11,11,11,0.85)',
+                            backdropFilter: 'blur(12px)',
+                            borderBottom: '1px solid var(--border)',
+                            padding: '0 16px',
+                            height: 54,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{
+                                    width: 30,
+                                    height: 30,
+                                    borderRadius: 8,
+                                    background: 'var(--surface)',
+                                    border: '1px solid var(--border)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <div style={{
+                                        width: 12,
+                                        height: 12,
+                                        borderRadius: 3,
+                                        background: 'var(--accent)'
+                                    }} />
+                                </div>
+                                <div style={{ lineHeight: 1.2 }}>
+                                    <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: '0.01em' }}>COINPAYER</div>
+                                    <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.12em' }}>
+                                        OTC
+                                    </div>
+                                </div>
+                            </div>
+                            {username && (
+                                <div style={{ fontSize: 12, color: 'var(--text-secondary)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {username}
+                                </div>
+                            )}
+                        </header>
+
+                        {/* Progress dots */}
+                        {step !== 'signup' && step !== 'final' && (
+                            <div style={{
+                                padding: '12px 16px 6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                borderBottom: '1px solid var(--border)'
+                            }}>
+                                <div className="step-indicator">
+                                    {['country', 'amount', 'payment', 'confirm'].map((s, i) => {
+                                        const idx = i + 1;
+                                        const active = step === s;
+                                        const done = STEPS[step] > STEPS[s];
+                                        return (
+                                            <div
+                                                key={s}
+                                                className={`step-dot ${active ? 'active' : ''} ${done ? 'done' : ''}`}
+                                                style={{ width: 6, height: 6, borderRadius: '50%', transition: 'background 0.3s' }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                                <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500, letterSpacing: '0.04em' }}>
+                                    {step === 'country' && 'País'}
+                                    {step === 'amount' && 'Monto'}
+                                    {step === 'payment' && 'Pago'}
+                                    {step === 'confirm' && 'Confirmar'}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Main content */}
+                        <main style={{ flex: 1, padding: '20px 16px 24px', overflowY: 'auto' }}>
+
+                            {step === 'signup' && (
+                                <div className="fade">
+                                    <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                                        Bienvenido a<br />
+                                        <span style={{ color: 'var(--accent)' }}>COINPAYER OTC</span>
+                                    </h1>
+                                    <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-secondary)', maxWidth: 280 }}>
+                                        Compra USDT al instante. Solo necesitamos tus datos una vez.
+                                    </p>
+
+                                    <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 18 }}>
+                                        <div>
+                                            <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>
+                                                Tu @usuario de Telegram
+                                            </label>
+                                            <div className="input-with-prefix">
+                                                <span className="prefix">@</span>
+                                                <input
+                                                    value={inputUser}
+                                                    onChange={e => setInputUser(e.target.value.replace(/^@/, ''))}
+                                                    type="text"
+                                                    placeholder="username"
+                                                    className="input-field"
+                                                    style={{ paddingLeft: 32 }}
+                                                />
+                                            </div>
+                                            {userError && (
+                                                <p style={{ fontSize: 11, color: '#f87171', marginTop: 4 }}>
+                                                    Mínimo 4 caracteres, solo letras, números y _
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>
+                                                Tu UID de BYBIT
+                                            </label>
+                                            <input
+                                                value={inputUid}
+                                                onChange={e => setInputUid(e.target.value.replace(/[^0-9]/g, ''))}
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder="12345678"
+                                                className="input-field"
+                                            />
+                                            {uidError && (
+                                                <p style={{ fontSize: 11, color: '#f87171', marginTop: 4 }}>
+                                                    Solo números, mínimo 5 dígitos
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button onClick={handleSignup} className="btn-primary" style={{ marginTop: 28 }}>
+                                        Continuar
+                                    </button>
+
+                                    <p style={{ marginTop: 16, fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.5 }}>
+                                        Tus datos se guardan solo en este dispositivo.
+                                    </p>
+                                </div>
+                            )}
+
+                            {step === 'country' && (
+                                <div className="fade">
+                                    <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>Selecciona tu país</h2>
+                                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>Tasa fija garantizada</p>
+
+                                    <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {COUNTRIES.map(c => (
+                                            <button key={c.code} onClick={() => selectCountry(c)} className="option-card">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                    <span className="flag">{c.flag}</span>
+                                                    <div>
+                                                        <div className="label">{c.name}</div>
+                                                        <div className="sub">{c.currency}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="right">
+                                                    <div className="hint">Tasa</div>
+                                                    <div className="rate">{fmt(c.rate)}</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 'amount' && country && (
+                                <div className="fade">
+                                    <button onClick={() => setStep('country')} className="btn-ghost" style={{ marginBottom: 4 }}>
+                                        ←
+                                    </button>
+
+                                    <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>¿Cuánto envías?</h2>
+
+                                    <div className="card" style={{ marginTop: 16, padding: '16px 18px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500 }}>
+                                                <span style={{ fontSize: 20 }}>{country.flag}</span>
+                                                {country.name}
+                                            </div>
+                                            <span className="badge">
+                                                1 USDT = {fmt(country.rate)} {country.currency}
+                                            </span>
+                                        </div>
+
+                                        <div className="input-with-suffix input-large-with-suffix">
+                                            <input
+                                                ref={inputRef}
+                                                value={amount}
+                                                onChange={e => handleAmountChange(e.target.value)}
+                                                type="text"
+                                                inputMode="decimal"
+                                                placeholder="0"
+                                                className="input-field input-large"
+                                                style={{ paddingRight: 56, fontSize: 28, fontWeight: 700 }}
+                                            />
+                                            <span className="suffix">{country.currency}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="amount-preview">
+                                        <div className="label">Recibirás aproximadamente</div>
+                                        <div className="value">
+                                            {usdtReceived.toFixed(2)} <span className="unit">USDT</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setStep('payment')}
+                                        className="btn-primary"
+                                        style={{ marginTop: 20 }}
+                                        disabled={amountNum <= 0}
+                                    >
+                                        Continuar
+                                    </button>
+                                </div>
+                            )}
+
+                            {step === 'payment' && country && (
+                                <div className="fade">
+                                    <button onClick={() => setStep('amount')} className="btn-ghost" style={{ marginBottom: 4 }}>
+                                        ←
+                                    </button>
+
+                                    <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>Método de pago</h2>
+                                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>Elige tu banco</p>
+
+                                    <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {country.methods.map(m => (
+                                            <button key={m} onClick={() => selectMethod(m)} className="option-card">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                    <div style={{
+                                                        width: 36,
+                                                        height: 36,
+                                                        borderRadius: 8,
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid var(--border)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        color: 'var(--text-secondary)'
+                                                    }}>
+                                                        {m.slice(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <span style={{ fontSize: 14, fontWeight: 500 }}>{m}</span>
+                                                </div>
+                                                <span style={{ color: 'var(--text-tertiary)', fontSize: 16 }}>›</span>
+                                            </button>
+                                        ))}
+                                        {country.code === 'MX' && (
+                                            <button onClick={() => selectMethod('Otro banco MX')} className="option-card" style={{ opacity: 0.7 }}>
+                                                <span style={{ fontSize: 13, fontWeight: 500 }}>Otro banco · SPEI</span>
+                                                <span style={{ color: 'var(--text-tertiary)', fontSize: 16 }}>›</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div style={{
+                                        marginTop: 16,
+                                        padding: '10px 14px',
+                                        borderRadius: 10,
+                                        background: 'rgba(251,191,36,0.06)',
+                                        border: '1px solid rgba(251,191,36,0.10)',
+                                        fontSize: 11,
+                                        color: 'rgba(251,191,36,0.7)',
+                                        lineHeight: 1.5
+                                    }}>
+                                        📟 Tu cuenta de pago se enviará por Telegram en privado.
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 'confirm' && country && (
+                                <div className="fade">
+                                    <button onClick={() => setStep('payment')} className="btn-ghost" style={{ marginBottom: 4 }}>
+                                        ←
+                                    </button>
+
+                                    <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>Confirma tu orden</h2>
+
+                                    <div className="card" style={{ marginTop: 14, padding: '16px 18px' }}>
+                                        <DetailRow label="Usuario" value={username} />
+                                        <DetailRow label="BYBIT UID" value={uid} />
+                                        <DetailRow label="País" value={`${country.flag} ${country.name}`} />
+                                        <DetailRow label="Monto" value={`${fmt(amountNum)} ${country.currency}`} />
+                                        <DetailRow label="Recibirás" value={`~${usdtReceived.toFixed(2)} USDT`} accent />
+                                        <DetailRow label="Banco" value={method} />
+                                        <DetailRow label="Referencia" value={ref} />
+                                    </div>
+
+                                    <div style={{
+                                        marginTop: 14,
+                                        padding: '10px 14px',
+                                        borderRadius: 10,
+                                        background: 'rgba(251,191,36,0.06)',
+                                        border: '1px solid rgba(251,191,36,0.10)',
+                                        fontSize: 11,
+                                        color: 'rgba(251,191,36,0.7)',
+                                        lineHeight: 1.5
+                                    }}>
+                                        🛎️ Tu cuenta de pago se enviará por Telegram en privado.
+                                    </div>
+
+                                    <button onClick={createOrder} className="btn-primary" style={{ marginTop: 18 }}>
+                                        Crear orden
+                                    </button>
+                                </div>
+                            )}
+
+                            {step === 'final' && country && (
+                                <div className="fade" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+                                    <div style={{ textAlign: 'center', paddingTop: 8 }}>
+                                        <div style={{
+                                            width: 56,
+                                            height: 56,
+                                            margin: '0 auto',
+                                            borderRadius: '50%',
+                                            background: 'var(--accent-dim)',
+                                            border: '1px solid rgba(59,130,246,0.2)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                                                <path d="M20 6L9 17l-5-5" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </div>
+                                        <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 12, letterSpacing: '-0.01em' }}>
+                                            Orden creada
+                                        </h2>
+                                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
+                                            Copia el mensaje y pégalo en el bot
+                                        </p>
+                                    </div>
+
+                                    <div className="card" style={{ marginTop: 16, padding: '14px 16px', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                                        <div>Usuario: {username}</div>
+                                        <div>BYBIT UID: {uid}</div>
+                                        <div>País: {country.name}</div>
+                                        <div>Monto: {fmt(amountNum)} {country.currency}</div>
+                                        <div>Recibir: ~{usdtReceived.toFixed(2)} USDT</div>
+                                        <div>Banco: {method}</div>
+                                        <div>Ref: {ref}</div>
+                                    </div>
+
+                                    <div style={{ marginTop: 'auto', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        <button onClick={copyAndOpen} className="btn-primary">
+                                            {copyState === 'idle' ? '📋 Copiar orden y abrir bot' : '✅ Copiado · Abriendo...'}
+                                        </button>
+
+                                        <button onClick={openTelegram} className="btn-secondary">
+                                            📲 Enviar comprobante
+                                        </button>
+
+                                        <button onClick={resetOrder} className="btn-secondary" style={{ border: 'none', color: 'var(--text-tertiary)', fontSize: 12 }}>
+                                            ➕ Realizar otra orden
+                                        </button>
+                                    </div>
+
+                                    <p style={{ marginTop: 12, fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                                        Bot oficial: @ViaOTCmexico_bot
+                                    </p>
+                                </div>
+                            )}
+
+                        </main>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(React.StrictMode, null, React.createElement(App, null)));
